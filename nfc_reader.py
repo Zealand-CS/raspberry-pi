@@ -1,8 +1,21 @@
 import evdev
 from evdev import categorize, ecodes
+import json
+from datetime import datetime
+from socket import *
+
+from response_handler import ResponseHandler
+
+serverName = '255.255.255.255'
+serverPort = 12000
+clientSocket = socket(AF_INET, SOCK_DGRAM)
+clientSocket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+response_handler = ResponseHandler()
 
 
-class Device():
+class Device:
+
     name = 'Sycreader RFID Technology Co., Ltd SYC ID&IC USB Reader'
 
     @classmethod
@@ -26,29 +39,33 @@ class Device():
                 "Device not found.\n - Check if it is properly connected. \n - Check permission of /dev/input/ (see README.md)")
             exit()
 
+
     @classmethod
     def run(cls):
         device = cls.connect()
         container = []
         try:
             device.grab()
-            # bind the device to the script
             print("RFID scanner is ready....")
             print("Press Control + c to quit.")
             for event in device.read_loop():
-                # enter into an endeless read-loop
                 if event.type == ecodes.EV_KEY and event.value == 1:
                     digit = evdev.ecodes.KEY[event.code]
                     if digit == 'KEY_ENTER':
-                        # create and dump the tag
                         tag = "".join(i.strip('KEY_') for i in container)
-                        print(tag)
+                        message = {"nfcCardId": str(tag), "Date": str(datetime.now())}
+                        response_handler.show_loading()
+                        clientSocket.sendto(json.dumps(message).encode(), (serverName, serverPort))
+                        modified_message, server_address = clientSocket.recvfrom(2048)
+                        response = modified_message.decode()
+
+                        response_handler.handle_response(response)
+
                         container = []
                     else:
                         container.append(digit)
-
-        except:
-            # catch all exceptions to be able release the device
+        except KeyboardInterrupt:
+            # catch all exceptions to be able to release the device
             device.ungrab()
             print('Quitting.')
 

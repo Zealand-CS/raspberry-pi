@@ -21,6 +21,3 @@ class Display:
 
     def show_loading(self):
         self.sense.show_message("Loading", text_colour=(230, 230, 250), scroll_speed=0.05)
-        for i in range(1, 8):
-            self.sense.set_rotation(i * 45)
-            sleep(0.5)

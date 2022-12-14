@@ -1,5 +1,5 @@
 import evdev
-from evdev import categorize, ecodes
+from evdev import ecodes
 import json
 from datetime import datetime
 from socket import *
@@ -71,3 +71,4 @@ class Device:
 
 
 Device.run()
+d
